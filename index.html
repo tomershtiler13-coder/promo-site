@@ -4,7 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>עמוד יחצן – אירועים</title>
-  <meta name="description" content="אירועים שאני מקדם – קישורים, קופונים, ותמונות במקום אחד." />
+  <meta name="description" content="אירועים שאני מקדם – קישורים, קופונים ותמונות במקום אחד." />
+
   <style>
     :root{
       --bg:#070711;
@@ -22,9 +23,10 @@
     *{ box-sizing:border-box; }
     body{
       margin:0; font-family: system-ui, -apple-system, Segoe UI, Arial;
-      background: radial-gradient(1200px 700px at 50% -200px, rgba(255,45,85,.25), transparent 60%),
-                  radial-gradient(900px 600px at 0% 0%, rgba(0,255,180,.10), transparent 55%),
-                  var(--bg);
+      background:
+        radial-gradient(1200px 700px at 50% -200px, rgba(255,45,85,.25), transparent 60%),
+        radial-gradient(900px 600px at 0% 0%, rgba(0,255,180,.10), transparent 55%),
+        var(--bg);
       color:var(--text);
     }
     a{ color:inherit; }
@@ -36,9 +38,7 @@
     }
     .wrap{ max-width: 1040px; margin:0 auto; padding: 14px 16px; }
     .top{ display:flex; gap:12px; flex-wrap:wrap; align-items:center; justify-content:space-between; }
-    .brand{
-      display:flex; align-items:center; gap:10px;
-    }
+    .brand{ display:flex; align-items:center; gap:10px; }
     .dot{
       width:10px; height:10px; border-radius:50%;
       background: var(--accent);
@@ -46,6 +46,7 @@
     }
     h1{ margin:0; font-size: 16px; letter-spacing:.2px; }
     .sub{ margin:0; font-size:12px; color:var(--muted); }
+
     .controls{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
     input, select{
       background: rgba(17,17,36,.92);
@@ -56,10 +57,9 @@
       outline: none;
     }
     input{ min-width: 220px; }
+
     main{ padding: 14px 16px 24px; }
-    .section{
-      max-width: 1040px; margin: 0 auto;
-    }
+    .section{ max-width: 1040px; margin: 0 auto; }
     .sectionHead{
       display:flex; align-items: baseline; justify-content:space-between;
       gap:12px; flex-wrap:wrap;
@@ -70,11 +70,13 @@
       color: var(--text);
     }
     .hint{ margin:0; font-size:12px; color:var(--muted); }
+
     .grid{
       display:grid;
       grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
       gap: 14px;
     }
+
     .card{
       background: linear-gradient(180deg, rgba(17,17,36,.92), rgba(12,12,26,.92));
       border:1px solid var(--line);
@@ -83,10 +85,37 @@
       box-shadow: 0 18px 40px rgba(0,0,0,.35);
       position:relative;
     }
-    .img{
-      width:100%; height: 180px; object-fit: cover; display:block;
+
+    /* ✅ פתרון לתמונות מכל יחס:
+       רקע blur מהתמונה + תמונה במרכז ב-contain (לא נחתכת) */
+    .imgWrap{
+      width:100%;
+      aspect-ratio: 16 / 9;      /* יחס אחיד לכל כרטיס */
+      position: relative;
+      overflow: hidden;
       background: rgba(255,255,255,.06);
     }
+    .imgWrap::before{
+      content:"";
+      position:absolute;
+      inset:-24px;               /* כדי שהבלר לא יראה קצוות */
+      background-image: var(--bgimg);
+      background-size: cover;
+      background-position: center;
+      filter: blur(18px) saturate(1.15);
+      transform: scale(1.08);
+      opacity: .55;
+    }
+    .imgInner{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      object-fit: contain;       /* חשוב: בלי חיתוך */
+      object-position: center;
+      display:block;
+    }
+
     .content{ padding: 12px 12px 14px; display:flex; flex-direction:column; gap:8px; }
     .title{ font-size: 16px; font-weight: 850; line-height:1.2; }
     .meta{
@@ -106,6 +135,7 @@
     }
     .pill.soon{ border-color: rgba(0,255,180,.35); box-shadow: 0 0 0 1px rgba(0,255,180,.08) inset; }
     .pill.past{ opacity: .75; }
+
     .actions{ display:flex; gap:10px; flex-wrap:wrap; margin-top: 4px; }
     .btn{
       text-decoration:none;
@@ -127,10 +157,9 @@
       color: var(--btn2text);
       border-color: rgba(255,255,255,.35);
     }
-    .btn.ghost{
-      background: transparent;
-    }
+    .btn.ghost{ background: transparent; }
     .btn:active{ transform: translateY(1px); }
+
     .empty{
       opacity:.85;
       padding: 22px 10px;
@@ -159,6 +188,7 @@
     .note{ line-height: 1.5; }
   </style>
 </head>
+
 <body>
 <header>
   <div class="wrap top">
@@ -264,7 +294,7 @@
   }
 
   function parseLocalDate(dateStr, timeStr) {
-    const t = (timeStr && timeStr.includes(':')) ? timeStr : '00:00';
+    const t = (timeStr && String(timeStr).includes(':')) ? String(timeStr) : '00:00';
     return new Date(`${dateStr}T${t}:00`);
   }
 
@@ -285,8 +315,8 @@
     const now = new Date();
     const diff = daysDiff(dt, now);
 
-    let pillText = isPast ? 'הסתיים' : (diff <= 7 ? 'קרוב' : 'בקרוב');
-    let pillClass = isPast ? 'past' : 'soon';
+    const pillText = isPast ? 'הסתיים' : (diff <= 7 ? 'קרוב' : 'בקרוב');
+    const pillClass = isPast ? 'past' : 'soon';
 
     const imagePath = e.image ? `events/${folder}/${e.image}` : '';
     const couponBtn = e.coupon_code ? `
@@ -309,9 +339,15 @@
       ${e.location ? `<span>📍 ${esc(e.location)}</span>` : ''}
     `;
 
+    const imageHtml = imagePath ? `
+      <div class="imgWrap" style="--bgimg:url('${esc(imagePath)}')">
+        <img class="imgInner" src="${esc(imagePath)}" alt="${esc(e.title || 'event')}">
+      </div>
+    ` : '';
+
     return `
       <div class="card">
-        ${imagePath ? `<img class="img" src="${esc(imagePath)}" alt="${esc(e.title)}">` : ''}
+        ${imageHtml}
         <div class="content">
           <div class="pillRow">
             <div class="pill ${pillClass}">${pillText}</div>
@@ -363,8 +399,7 @@
 
   function render(all) {
     const now = new Date();
-
-    let items = applySearch(all);
+    const items = applySearch(all);
 
     let upcoming = items.filter(x => x.dt >= now);
     let past = items.filter(x => x.dt < now);
@@ -390,7 +425,6 @@
   }
 
   async function init() {
-    // events/index.json lists folder names
     const folders = await fetchJson('events/index.json');
 
     const all = [];
@@ -404,7 +438,6 @@
       }
     }
 
-    // initial render + wire controls
     const rerender = () => render(all);
     qEl.addEventListener('input', rerender);
     sortEl.addEventListener('change', rerender);
