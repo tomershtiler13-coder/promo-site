@@ -195,8 +195,8 @@
     <div class="brand">
       <div class="dot"></div>
       <div>
-        <h1>אירועים שאני מקדם</h1>
-        <p class="sub">קישורים, קופונים ותמונות — במקום אחד</p>
+        <h1>קהילת עדכונים הפקות שטילר ורון</h1>
+        <p class="sub">אירועים שאנחנו מקדמים</p>
       </div>
     </div>
 
@@ -210,8 +210,9 @@
         <option value="newest">עבר: הכי חדש למעלה</option>
         <option value="oldest">עבר: הכי ישן למעלה</option>
       </select>
-      <a class="btn ghost" href="#" id="shareBtn" title="העתק קישור לעמוד">🔗 העתק קישור</a>
-    </div>
+		<a class="btn ghost" href="https://chat.whatsapp.com/J8ntxdUO1hWAPfgK5m7lSQ" target="_blank" rel="noopener">
+  👥 להצטרפות לקהילה
+</a>    </div>
   </div>
 </header>
 
@@ -220,7 +221,6 @@
     <div class="sectionHead">
       <div>
         <h2>אירועים קרובים</h2>
-        <p class="hint">האירוע הקרוב מופיע ראשון. קופון? לחיצה אחת.</p>
       </div>
       <div class="toggleRow">
         <span class="count" id="upcomingCount">—</span>
@@ -250,13 +250,6 @@
   </section>
 </main>
 
-<footer>
-  <div class="note">
-    להוסיף אירוע: צור תיקייה תחת <b>events/</b> עם <b>meta.json</b> + <b>cover.jpg</b>, ואז דחיפה ל־GitHub.
-    ה־Actions יעדכן אינדקס אוטומטית ויפרסם ל־GitHub Pages.
-  </div>
-</footer>
-
 <script>
   const upcomingGrid = document.getElementById('upcomingGrid');
   const pastGrid = document.getElementById('pastGrid');
@@ -271,21 +264,6 @@
   const upcomingCount = document.getElementById('upcomingCount');
   const pastCount = document.getElementById('pastCount');
   const togglePastBtn = document.getElementById('togglePast');
-
-  const shareBtn = document.getElementById('shareBtn');
-
-  shareBtn.addEventListener('click', async (e) => {
-    e.preventDefault();
-    const url = window.location.href;
-    try {
-      await navigator.clipboard.writeText(url);
-      const old = shareBtn.textContent;
-      shareBtn.textContent = '✅ הועתק';
-      setTimeout(() => shareBtn.textContent = old, 1100);
-    } catch {
-      alert('לא הצלחתי להעתיק אוטומטית. הנה הקישור: ' + url);
-    }
-  });
 
   function esc(s) {
     return String(s ?? '').replace(/[&<>"']/g, m => ({
