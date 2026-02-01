@@ -50,6 +50,7 @@ python tools/promogen.py serve --port 8000
 
 ---
 
+
 ## פורמט meta.json
 דוגמה:
 ```json
