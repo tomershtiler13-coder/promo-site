@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>עמוד יחצן – אירועים</title>
+  <meta name="description" content="אירועים שאני מקדם – קישורים, קופונים, ותמונות במקום אחד." />
+  <style>
+    :root{
+      --bg:#070711;
+      --card:#111124;
+      --muted:#b8b8c9;
+      --text:#f4f4f7;
+      --line:rgba(255,255,255,.10);
+      --line2:rgba(255,255,255,.14);
+      --btn:#1a1a2e;
+      --btn2:#ffffff;
+      --btn2text:#000000;
+      --accent:#ff2d55;
+      --good:#00ffb4;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0; font-family: system-ui, -apple-system, Segoe UI, Arial;
+      background: radial-gradient(1200px 700px at 50% -200px, rgba(255,45,85,.25), transparent 60%),
+                  radial-gradient(900px 600px at 0% 0%, rgba(0,255,180,.10), transparent 55%),
+                  var(--bg);
+      color:var(--text);
+    }
+    a{ color:inherit; }
+    header{
+      position:sticky; top:0; z-index:20;
+      background: rgba(7,7,17,.86);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--line);
+    }
+    .wrap{ max-width: 1040px; margin:0 auto; padding: 14px 16px; }
+    .top{ display:flex; gap:12px; flex-wrap:wrap; align-items:center; justify-content:space-between; }
+    .brand{
+      display:flex; align-items:center; gap:10px;
+    }
+    .dot{
+      width:10px; height:10px; border-radius:50%;
+      background: var(--accent);
+      box-shadow: 0 0 22px rgba(255,45,85,.55);
+    }
+    h1{ margin:0; font-size: 16px; letter-spacing:.2px; }
+    .sub{ margin:0; font-size:12px; color:var(--muted); }
+    .controls{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    input, select{
+      background: rgba(17,17,36,.92);
+      border:1px solid var(--line2);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 14px;
+      outline: none;
+    }
+    input{ min-width: 220px; }
+    main{ padding: 14px 16px 24px; }
+    .section{
+      max-width: 1040px; margin: 0 auto;
+    }
+    .sectionHead{
+      display:flex; align-items: baseline; justify-content:space-between;
+      gap:12px; flex-wrap:wrap;
+      margin: 18px 0 10px;
+    }
+    .sectionHead h2{
+      margin:0; font-size: 14px; letter-spacing:.2px;
+      color: var(--text);
+    }
+    .hint{ margin:0; font-size:12px; color:var(--muted); }
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+      gap: 14px;
+    }
+    .card{
+      background: linear-gradient(180deg, rgba(17,17,36,.92), rgba(12,12,26,.92));
+      border:1px solid var(--line);
+      border-radius: 18px;
+      overflow:hidden;
+      box-shadow: 0 18px 40px rgba(0,0,0,.35);
+      position:relative;
+    }
+    .img{
+      width:100%; height: 180px; object-fit: cover; display:block;
+      background: rgba(255,255,255,.06);
+    }
+    .content{ padding: 12px 12px 14px; display:flex; flex-direction:column; gap:8px; }
+    .title{ font-size: 16px; font-weight: 850; line-height:1.2; }
+    .meta{
+      display:flex; gap: 10px; flex-wrap:wrap;
+      font-size: 12.5px; color: var(--muted);
+    }
+    .desc{ font-size: 13px; line-height:1.35; color: rgba(244,244,247,.92); }
+    .pillRow{ display:flex; gap:8px; flex-wrap:wrap; }
+    .pill{
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line2);
+      width: fit-content;
+      color: var(--text);
+      background: rgba(0,0,0,.12);
+    }
+    .pill.soon{ border-color: rgba(0,255,180,.35); box-shadow: 0 0 0 1px rgba(0,255,180,.08) inset; }
+    .pill.past{ opacity: .75; }
+    .actions{ display:flex; gap:10px; flex-wrap:wrap; margin-top: 4px; }
+    .btn{
+      text-decoration:none;
+      background: rgba(26,26,46,.92);
+      border:1px solid var(--line2);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 14px;
+      font-weight: 800;
+      font-size: 13px;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      cursor:pointer;
+      user-select:none;
+    }
+    .btn.primary{
+      background: var(--btn2);
+      color: var(--btn2text);
+      border-color: rgba(255,255,255,.35);
+    }
+    .btn.ghost{
+      background: transparent;
+    }
+    .btn:active{ transform: translateY(1px); }
+    .empty{
+      opacity:.85;
+      padding: 22px 10px;
+      text-align:center;
+      border:1px dashed rgba(255,255,255,.18);
+      border-radius: 16px;
+      margin-top: 12px;
+      color: var(--muted);
+    }
+    .toggleRow{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .count{
+      font-size: 12px; color: var(--muted);
+      border:1px solid var(--line);
+      border-radius: 999px;
+      padding: 6px 10px;
+      background: rgba(0,0,0,.12);
+    }
+    footer{
+      border-top: 1px solid var(--line);
+      padding: 18px 16px 26px;
+      color: var(--muted);
+      font-size: 12px;
+      max-width: 1040px;
+      margin: 0 auto;
+    }
+    .note{ line-height: 1.5; }
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap top">
+    <div class="brand">
+      <div class="dot"></div>
+      <div>
+        <h1>אירועים שאני מקדם</h1>
+        <p class="sub">קישורים, קופונים ותמונות — במקום אחד</p>
+      </div>
+    </div>
+
+    <div class="controls">
+      <input id="q" placeholder="חיפוש… (שם/מקום)" />
+      <select id="sort">
+        <option value="asc">מיון קרובים: קרוב→רחוק</option>
+        <option value="desc">מיון קרובים: רחוק→קרוב</option>
+      </select>
+      <select id="pastSort">
+        <option value="newest">עבר: הכי חדש למעלה</option>
+        <option value="oldest">עבר: הכי ישן למעלה</option>
+      </select>
+      <a class="btn ghost" href="#" id="shareBtn" title="העתק קישור לעמוד">🔗 העתק קישור</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="section">
+    <div class="sectionHead">
+      <div>
+        <h2>אירועים קרובים</h2>
+        <p class="hint">האירוע הקרוב מופיע ראשון. קופון? לחיצה אחת.</p>
+      </div>
+      <div class="toggleRow">
+        <span class="count" id="upcomingCount">—</span>
+      </div>
+    </div>
+
+    <div id="upcomingGrid" class="grid"></div>
+    <div id="upcomingEmpty" class="empty" style="display:none;">אין כרגע אירועים קרובים לפי החיפוש.</div>
+  </section>
+
+  <section class="section">
+    <div class="sectionHead">
+      <div>
+        <h2>Past events</h2>
+        <p class="hint">ארכיון. מוסתר כברירת מחדל כדי לשמור על פוקוס.</p>
+      </div>
+      <div class="toggleRow">
+        <span class="count" id="pastCount">—</span>
+        <button class="btn" id="togglePast">הצג</button>
+      </div>
+    </div>
+
+    <div id="pastWrap" style="display:none;">
+      <div id="pastGrid" class="grid"></div>
+      <div id="pastEmpty" class="empty" style="display:none;">אין אירועים שעברו לפי החיפוש.</div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="note">
+    להוסיף אירוע: צור תיקייה תחת <b>events/</b> עם <b>meta.json</b> + <b>cover.jpg</b>, ואז דחיפה ל־GitHub.
+    ה־Actions יעדכן אינדקס אוטומטית ויפרסם ל־GitHub Pages.
+  </div>
+</footer>
+
+<script>
+  const upcomingGrid = document.getElementById('upcomingGrid');
+  const pastGrid = document.getElementById('pastGrid');
+  const upcomingEmpty = document.getElementById('upcomingEmpty');
+  const pastEmpty = document.getElementById('pastEmpty');
+  const pastWrap = document.getElementById('pastWrap');
+
+  const qEl = document.getElementById('q');
+  const sortEl = document.getElementById('sort');
+  const pastSortEl = document.getElementById('pastSort');
+
+  const upcomingCount = document.getElementById('upcomingCount');
+  const pastCount = document.getElementById('pastCount');
+  const togglePastBtn = document.getElementById('togglePast');
+
+  const shareBtn = document.getElementById('shareBtn');
+
+  shareBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    const url = window.location.href;
+    try {
+      await navigator.clipboard.writeText(url);
+      const old = shareBtn.textContent;
+      shareBtn.textContent = '✅ הועתק';
+      setTimeout(() => shareBtn.textContent = old, 1100);
+    } catch {
+      alert('לא הצלחתי להעתיק אוטומטית. הנה הקישור: ' + url);
+    }
+  });
+
+  function esc(s) {
+    return String(s ?? '').replace(/[&<>"']/g, m => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[m]));
+  }
+
+  function parseLocalDate(dateStr, timeStr) {
+    const t = (timeStr && timeStr.includes(':')) ? timeStr : '00:00';
+    return new Date(`${dateStr}T${t}:00`);
+  }
+
+  function fmtDate(d) {
+    const dd = String(d.getDate()).padStart(2,'0');
+    const mm = String(d.getMonth()+1).padStart(2,'0');
+    const yyyy = d.getFullYear();
+    return `${dd}.${mm}.${yyyy}`;
+  }
+
+  function daysDiff(a, b) {
+    const ms = 24 * 60 * 60 * 1000;
+    return Math.floor((a - b) / ms);
+  }
+
+  function card(e, folder, isPast) {
+    const dt = parseLocalDate(e.date, e.time);
+    const now = new Date();
+    const diff = daysDiff(dt, now);
+
+    let pillText = isPast ? 'הסתיים' : (diff <= 7 ? 'קרוב' : 'בקרוב');
+    let pillClass = isPast ? 'past' : 'soon';
+
+    const imagePath = e.image ? `events/${folder}/${e.image}` : '';
+    const couponBtn = e.coupon_code ? `
+      <button class="btn" data-copy="${esc(e.coupon_code)}">🎟️ העתק קופון: ${esc(e.coupon_code)}</button>
+    ` : '';
+
+    const ticketsBtn = (e.ticket_url && !isPast) ? `
+      <a class="btn primary" href="${esc(e.ticket_url)}" target="_blank" rel="noopener">כרטיסים</a>
+    ` : (e.ticket_url && isPast) ? `
+      <a class="btn primary" href="${esc(e.ticket_url)}" target="_blank" rel="noopener">לינק לאירוע</a>
+    ` : '';
+
+    const promoterBtn = e.promoter_url ? `
+      <a class="btn" href="${esc(e.promoter_url)}" target="_blank" rel="noopener">הקישור שלי</a>
+    ` : '';
+
+    const whenLine = `
+      <span>📅 ${fmtDate(dt)}</span>
+      ${e.time ? `<span>🕒 ${esc(e.time)}</span>` : ''}
+      ${e.location ? `<span>📍 ${esc(e.location)}</span>` : ''}
+    `;
+
+    return `
+      <div class="card">
+        ${imagePath ? `<img class="img" src="${esc(imagePath)}" alt="${esc(e.title)}">` : ''}
+        <div class="content">
+          <div class="pillRow">
+            <div class="pill ${pillClass}">${pillText}</div>
+          </div>
+          <div class="title">${esc(e.title || 'אירוע')}</div>
+          <div class="meta">${whenLine}</div>
+          ${e.description ? `<div class="desc">${esc(e.description)}</div>` : ''}
+          <div class="actions">
+            ${ticketsBtn}
+            ${couponBtn}
+            ${promoterBtn}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function wireCopyButtons() {
+    document.querySelectorAll('[data-copy]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const code = btn.getAttribute('data-copy');
+        try {
+          await navigator.clipboard.writeText(code);
+          const old = btn.textContent;
+          btn.textContent = '✅ הועתק';
+          setTimeout(() => btn.textContent = old, 1100);
+        } catch {
+          alert('לא הצלחתי להעתיק אוטומטית. הקוד: ' + code);
+        }
+      });
+    });
+  }
+
+  async function fetchJson(url) {
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
+    return await res.json();
+  }
+
+  function applySearch(items) {
+    const q = qEl.value.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter(x => {
+      const e = x.meta;
+      return (e.title || '').toLowerCase().includes(q)
+          || (e.location || '').toLowerCase().includes(q);
+    });
+  }
+
+  function render(all) {
+    const now = new Date();
+
+    let items = applySearch(all);
+
+    let upcoming = items.filter(x => x.dt >= now);
+    let past = items.filter(x => x.dt < now);
+
+    // sort upcoming
+    const s = sortEl.value;
+    upcoming.sort((a,b) => s === 'asc' ? (a.dt - b.dt) : (b.dt - a.dt));
+
+    // sort past
+    const ps = pastSortEl.value;
+    past.sort((a,b) => ps === 'newest' ? (b.dt - a.dt) : (a.dt - b.dt));
+
+    upcomingGrid.innerHTML = upcoming.map(x => card(x.meta, x.folder, false)).join('');
+    pastGrid.innerHTML = past.map(x => card(x.meta, x.folder, true)).join('');
+
+    upcomingEmpty.style.display = upcoming.length ? 'none' : 'block';
+    pastEmpty.style.display = past.length ? 'none' : 'block';
+
+    upcomingCount.textContent = `${upcoming.length} אירועים`;
+    pastCount.textContent = `${past.length} אירועים`;
+
+    wireCopyButtons();
+  }
+
+  async function init() {
+    // events/index.json lists folder names
+    const folders = await fetchJson('events/index.json');
+
+    const all = [];
+    for (const folder of folders) {
+      try {
+        const meta = await fetchJson(`events/${folder}/meta.json`);
+        const dt = parseLocalDate(meta.date, meta.time);
+        all.push({ folder, meta, dt });
+      } catch (e) {
+        console.warn('Failed loading event:', folder, e);
+      }
+    }
+
+    // initial render + wire controls
+    const rerender = () => render(all);
+    qEl.addEventListener('input', rerender);
+    sortEl.addEventListener('change', rerender);
+    pastSortEl.addEventListener('change', rerender);
+
+    togglePastBtn.addEventListener('click', () => {
+      const open = pastWrap.style.display !== 'none';
+      pastWrap.style.display = open ? 'none' : 'block';
+      togglePastBtn.textContent = open ? 'הצג' : 'הסתר';
+    });
+
+    rerender();
+  }
+
+  init().catch(err => {
+    console.error(err);
+    upcomingEmpty.style.display = 'block';
+    upcomingEmpty.textContent = 'שגיאה בטעינת events/index.json / meta.json. בדוק שהקבצים קיימים ותקינים.';
+  });
+</script>
+</body>
+</html>
