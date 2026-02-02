@@ -2,11 +2,13 @@ import json
 import os
 import re
 import shutil
+import subprocess
+import sys
+import time
 from datetime import datetime
+from pathlib import Path
 import tkinter as tk
 from tkinter import filedialog, messagebox
-from pathlib import Path
-import sys
 
 try:
     from PIL import Image
@@ -15,6 +17,34 @@ except Exception:
     PIL_OK = False
 
 
+# ---------- repo detection ----------
+def find_repo_root(start: Path) -> Path | None:
+    p = start.resolve()
+    for _ in range(25):
+        if (p / ".git").exists():
+            return p
+        p = p.parent
+    return None
+
+
+def app_start_dir() -> Path:
+    # When packaged with PyInstaller, sys.executable is inside ...EventFolderMaker.app/Contents/MacOS/...
+    exe = Path(sys.executable).resolve()
+    # Usually parents[3] is the folder containing the .app (e.g. repo/tools/)
+    if len(exe.parents) > 3:
+        return exe.parents[3]
+    return Path.cwd()
+
+
+def default_events_root() -> str:
+    root = find_repo_root(app_start_dir())
+    if root:
+        return str(root / "events")
+    # fallback if not in a repo
+    return os.path.join(os.path.expanduser("~"), "Desktop", "events")
+
+
+# ---------- helpers ----------
 def slugify(text: str) -> str:
     text = text.strip().lower()
     text = text.replace("&", " and ")
@@ -43,53 +73,52 @@ def validate_time(time_str: str) -> str:
     return time_str.strip()
 
 
-def find_repo_root(start: Path) -> Path | None:
-    p = start.resolve()
-    for _ in range(20):
-        if (p / ".git").exists():
-            return p
-        p = p.parent
-    return None
-
-def app_start_dir() -> Path:
-    # כשמריצים מתוך .app של PyInstaller, sys.executable נמצא בתוך ...EventFolderMaker.app/Contents/MacOS/...
-    exe = Path(sys.executable).resolve()
-    # exe.parents[3] לרוב זה התיקייה שמכילה את ה-.app (למשל repo/tools/)
-    if len(exe.parents) > 3:
-        return exe.parents[3]
-    return Path.cwd()
-
-def default_events_root() -> str:
-    root = find_repo_root(app_start_dir())
-    if root:
-        return str(root / "events")
-    # fallback אם לא מצא repo
-    return os.path.join(os.path.expanduser("~"), "Desktop", "events")
+def run_cmd(cmd: list[str], cwd: str, log_fn):
+    log_fn(f"$ {' '.join(cmd)}")
+    p = subprocess.run(cmd, cwd=cwd, text=True, capture_output=True)
+    if p.stdout.strip():
+        log_fn(p.stdout.strip())
+    if p.stderr.strip():
+        log_fn(p.stderr.strip())
+    if p.returncode != 0:
+        raise RuntimeError(f"Command failed: {' '.join(cmd)}")
 
 
+def command_exists(name: str) -> bool:
+    from shutil import which
+    return which(name) is not None
+
+
+def gh_authed(repo_cwd: str) -> bool:
+    p = subprocess.run(["gh", "auth", "status"], cwd=repo_cwd, text=True, capture_output=True)
+    return p.returncode == 0
+
+
+# ---------- GUI ----------
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Event Folder Maker")
-        self.geometry("520x700")
-        self.minsize(520, 650)
+        self.geometry("580x820")
+        self.minsize(580, 780)
         self.resizable(True, True)
-        
-
-
 
         self.image_path = tk.StringVar(value="")
+        self.auto_pr = tk.BooleanVar(value=True)  # default ON
 
         self._build_ui()
 
     def _build_ui(self):
-        pad = {"padx": 14, "pady": 7}
-
-        header = tk.Label(self, text="הוספת אירוע (יוצר תיקייה + meta.json + cover.jpg)", font=("Arial", 13, "bold"))
-        header.pack(pady=14)
+        header = tk.Label(
+            self,
+            text="הוספת אירוע (יוצר תיקייה + meta.json + cover.jpg)\nואופציונלי: Sync + Push + PR אוטומטי",
+            font=("Arial", 13, "bold"),
+            justify="center"
+        )
+        header.pack(pady=10)
 
         frm = tk.Frame(self)
-        frm.pack(fill="x", **pad)
+        frm.pack(fill="x", padx=14, pady=4)
 
         self.title_var = self._row(frm, "שם האירוע*", "")
         self.date_var = self._row(frm, "תאריך* (YYYY-MM-DD)", datetime.now().strftime("%Y-%m-%d"))
@@ -100,40 +129,75 @@ class App(tk.Tk):
         self.desc_var = self._row(frm, "תיאור קצר", "", multiline=True)
 
         imgfrm = tk.Frame(self)
-        imgfrm.pack(fill="x", **pad)
-
+        imgfrm.pack(fill="x", padx=14, pady=4)
         tk.Label(imgfrm, text="תמונה/פלייר*").grid(row=0, column=0, sticky="w")
-        tk.Entry(imgfrm, textvariable=self.image_path, width=44).grid(row=1, column=0, sticky="w", pady=4)
+        tk.Entry(imgfrm, textvariable=self.image_path, width=52).grid(row=1, column=0, sticky="w", pady=4)
         tk.Button(imgfrm, text="בחר קובץ…", command=self.pick_image).grid(row=1, column=1, padx=8)
 
         outfrm = tk.Frame(self)
-        outfrm.pack(fill="x", **pad)
-        tk.Label(outfrm, text="איפה ליצור את התיקיות").grid(row=0, column=0, sticky="w")
+        outfrm.pack(fill="x", padx=14, pady=4)
+        tk.Label(outfrm, text="איפה ליצור את התיקיות (ברירת מחדל: events בתוך הריפו)").grid(row=0, column=0, sticky="w")
         self.out_root = tk.StringVar(value=default_events_root())
-        tk.Entry(outfrm, textvariable=self.out_root, width=44).grid(row=1, column=0, sticky="w", pady=4)
+        tk.Entry(outfrm, textvariable=self.out_root, width=52).grid(row=1, column=0, sticky="w", pady=4)
         tk.Button(outfrm, text="בחר…", command=self.pick_out_root).grid(row=1, column=1, padx=8)
 
-        btnfrm = tk.Frame(self)
-        btnfrm.pack(fill="x", padx=14, pady=16)
-        tk.Button(btnfrm, text="צור תיקיית אירוע", font=("Arial", 12, "bold"), command=self.create_event).pack(fill="x", pady=10)
+        optfrm = tk.Frame(self)
+        optfrm.pack(fill="x", padx=14, pady=8)
+        tk.Checkbutton(
+            optfrm,
+            text="אחרי יצירה: Sync + Push + Create PR אוטומטי",
+            variable=self.auto_pr
+        ).pack(anchor="w")
 
-        hint = tk.Label(self, text="* שדות חובה. ייצא בתיקייה: Desktop/events/YYYY-MM-DD-slug/", fg="#666")
-        hint.pack(pady=6)
+        btnfrm = tk.Frame(self)
+        btnfrm.pack(fill="x", padx=14, pady=8)
+
+        tk.Button(
+            btnfrm,
+            text="✅ צור תיקיית אירוע",
+            font=("Arial", 12, "bold"),
+            command=self.create_event
+        ).pack(fill="x", pady=6)
+
+        tk.Button(
+            btnfrm,
+            text="🚀 Push + PR (רק אם כבר יש שינויים ב-events/)",
+            command=self.push_pr_only
+        ).pack(fill="x", pady=6)
+
+        tk.Button(
+            btnfrm,
+            text="🔐 התחבר ל-GitHub (gh auth login)",
+            command=self.gh_login
+        ).pack(fill="x", pady=6)
+
+        hint = tk.Label(
+            self,
+            text="הערות:\n- כדי ש-Push+PR יעבוד: צריך Clone אמיתי של הריפו (לא ZIP), וגם git+gh מותקנים.\n- אם אין חיבור ל-gh: לחץ על 'התחבר ל-GitHub'",
+            fg="#666",
+            justify="left"
+        )
+        hint.pack(padx=14, pady=6, anchor="w")
 
         if not PIL_OK:
-            warn = tk.Label(self, text="הערה: Pillow לא מותקן, אז התמונה תועתק כמו שהיא (עדיין בשם cover.jpg).",
-                            fg="#a00")
+            warn = tk.Label(self, text="הערה: Pillow לא מותקן, אז התמונה תועתק כמו שהיא (עדיין בשם cover.jpg).", fg="#a00")
             warn.pack(pady=4)
+
+        # log box
+        loglbl = tk.Label(self, text="Log", font=("Arial", 11, "bold"))
+        loglbl.pack(padx=14, pady=(8, 4), anchor="w")
+
+        self.log = tk.Text(self, height=14, width=90)
+        self.log.pack(fill="both", expand=True, padx=14, pady=(0, 14))
 
     def _row(self, parent, label, default, multiline=False):
         frame = tk.Frame(parent)
         frame.pack(fill="x", pady=4)
         tk.Label(frame, text=label).pack(anchor="w")
         if multiline:
-            txt = tk.Text(frame, height=4, width=58)
+            txt = tk.Text(frame, height=4, width=70)
             txt.insert("1.0", default)
-            txt.pack()
-            # return a getter wrapper
+            txt.pack(fill="x")
             class TVar:
                 def get(self_inner): return txt.get("1.0", "end").strip()
                 def set(self_inner, v):
@@ -142,8 +206,13 @@ class App(tk.Tk):
             return TVar()
         else:
             var = tk.StringVar(value=default)
-            tk.Entry(frame, textvariable=var, width=60).pack()
+            tk.Entry(frame, textvariable=var, width=74).pack(fill="x")
             return var
+
+    def log_line(self, s: str):
+        self.log.insert("end", s + "\n")
+        self.log.see("end")
+        self.update_idletasks()
 
     def pick_image(self):
         p = filedialog.askopenfilename(
@@ -158,8 +227,24 @@ class App(tk.Tk):
         if d:
             self.out_root.set(d)
 
+    # ---------- GH login ----------
+    def gh_login(self):
+        try:
+            self.log_line("---- gh auth login ----")
+            if not command_exists("gh"):
+                raise RuntimeError("לא מצאתי gh (GitHub CLI). התקן gh ואז נסה שוב.")
+            # open interactive login in Terminal
+            subprocess.Popen(["open", "-a", "Terminal", "gh", "auth", "login"])
+            messagebox.showinfo("התחברות", "פתחתי טרמינל להתחברות. סיים את התהליך שם ואז חזור לאפליקציה.")
+        except Exception as e:
+            messagebox.showerror("שגיאה", str(e))
+            self.log_line(f"ERROR: {e}")
+
+    # ---------- main actions ----------
     def create_event(self):
         try:
+            self.log_line("---- Create Event ----")
+
             title = self.title_var.get().strip()
             if not title:
                 raise ValueError("חסר שם אירוע.")
@@ -194,7 +279,8 @@ class App(tk.Tk):
                 "image": "cover.jpg"
             }
 
-            with open(os.path.join(out_dir, "meta.json"), "w", encoding="utf-8") as f:
+            meta_path = os.path.join(out_dir, "meta.json")
+            with open(meta_path, "w", encoding="utf-8") as f:
                 json.dump(meta, f, ensure_ascii=False, indent=2)
 
             cover_path = os.path.join(out_dir, "cover.jpg")
@@ -209,9 +295,147 @@ class App(tk.Tk):
             else:
                 shutil.copyfile(img, cover_path)
 
+            self.log_line(f"Created: {out_dir}")
             messagebox.showinfo("הצלחה ✅", f"נוצר אירוע:\n{out_dir}\n\nבתיקייה יש meta.json + cover.jpg")
+
+            # auto PR
+            if self.auto_pr.get():
+                self.push_pr(repo_hint_path=out_dir)
+
+            # reset a bit
+            self.image_path.set("")
+            self.title_var.set("")
+            self.ticket_var.set("")
+            self.coupon_var.set("")
+            self.loc_var.set("")
+            try:
+                self.desc_var.set("")
+            except Exception:
+                pass
+
         except Exception as e:
             messagebox.showerror("שגיאה", str(e))
+            self.log_line(f"ERROR: {e}")
+
+    def push_pr_only(self):
+        try:
+            self.push_pr(repo_hint_path=None)
+        except Exception as e:
+            messagebox.showerror("שגיאה", str(e))
+            self.log_line(f"ERROR: {e}")
+
+    def push_pr(self, repo_hint_path: str | None):
+        self.log_line("---- Push + PR ----")
+
+        if not command_exists("git"):
+            raise RuntimeError("לא מצאתי git במחשב. התקן GitHub Desktop או Xcode Command Line Tools.")
+        if not command_exists("gh"):
+            raise RuntimeError("לא מצאתי gh (GitHub CLI). התקן gh ואז נסה שוב.")
+
+        # locate repo root
+        start = Path(repo_hint_path) if repo_hint_path else app_start_dir()
+        repo_root = find_repo_root(start) or find_repo_root(app_start_dir())
+        if not repo_root:
+            raise RuntimeError("לא מצאתי .git. כדי ש-Push+PR יעבוד צריך Clone אמיתי של הריפו (לא ZIP).")
+
+        repo = str(repo_root)
+        self.log_line(f"Repo: {repo}")
+
+        # if not authed -> offer login
+        if not gh_authed(repo):
+            do = messagebox.askyesno("לא מחובר ל-GitHub", "לא מצאתי חיבור ל-gh.\nרוצה להתחבר עכשיו? (יפתח טרמינל)")
+            if do:
+                self.gh_login()
+            raise RuntimeError("צריך להתחבר ל-gh ואז לנסות שוב (gh auth login).")
+
+        # detect default branch + parent (upstream)
+        default_branch = "main"
+        try:
+            p = subprocess.run(["gh", "repo", "view", "--json", "defaultBranchRef", "-q", ".defaultBranchRef.name"],
+                               cwd=repo, text=True, capture_output=True)
+            if p.returncode == 0 and p.stdout.strip():
+                default_branch = p.stdout.strip()
+        except Exception:
+            pass
+
+        parent_full = ""
+        try:
+            p = subprocess.run(["gh", "repo", "view", "--json", "parent", "-q", ".parent.nameWithOwner"],
+                               cwd=repo, text=True, capture_output=True)
+            if p.returncode == 0:
+                parent_full = p.stdout.strip()
+        except Exception:
+            pass
+
+        # sync fork on GitHub if parent exists
+        if parent_full:
+            self.log_line(f"Detected fork. Upstream: {parent_full}")
+            try:
+                run_cmd(["gh", "repo", "sync", "-b", default_branch], cwd=repo, log_fn=self.log_line)
+            except Exception:
+                self.log_line("Warning: gh repo sync failed (continuing).")
+
+        # pull latest on default branch
+        run_cmd(["git", "checkout", default_branch], cwd=repo, log_fn=self.log_line)
+        run_cmd(["git", "pull", "--ff-only"], cwd=repo, log_fn=self.log_line)
+
+        # check if there are changes in events/
+        p = subprocess.run(["git", "status", "--porcelain", "events/"], cwd=repo, text=True, capture_output=True)
+        if p.returncode != 0:
+            raise RuntimeError("git status נכשל.")
+        if not p.stdout.strip():
+            messagebox.showinfo("אין שינויים", "לא נמצאו שינויים בתוך events/.")
+            self.log_line("No changes in events/.")
+            return
+
+        # create branch
+        ts = time.strftime("%Y%m%d-%H%M%S")
+        branch = f"partner/events-{ts}"
+        run_cmd(["git", "checkout", "-b", branch], cwd=repo, log_fn=self.log_line)
+
+        # stage only events/
+        run_cmd(["git", "add", "events/"], cwd=repo, log_fn=self.log_line)
+
+        # commit message
+        msg = f"Update events ({ts})"
+        run_cmd(["git", "commit", "-m", msg], cwd=repo, log_fn=self.log_line)
+
+        # push
+        run_cmd(["git", "push", "-u", "origin", branch], cwd=repo, log_fn=self.log_line)
+
+        # create PR
+        pr_repo_flag = []
+        if parent_full:
+            pr_repo_flag = ["--repo", parent_full]
+            fork_full = ""
+            p2 = subprocess.run(["gh", "repo", "view", "--json", "nameWithOwner", "-q", ".nameWithOwner"],
+                                cwd=repo, text=True, capture_output=True)
+            if p2.returncode == 0:
+                fork_full = p2.stdout.strip()
+            fork_owner = fork_full.split("/")[0] if "/" in fork_full else ""
+            head = f"{fork_owner}:{branch}" if fork_owner else branch
+
+            pr_cmd = ["gh", "pr", "create", *pr_repo_flag, "--base", default_branch, "--head", head,
+                      "--title", msg, "--body", "Auto PR from EventFolderMaker."]
+        else:
+            pr_cmd = ["gh", "pr", "create", "--base", default_branch, "--head", branch,
+                      "--title", msg, "--body", "Auto PR from EventFolderMaker."]
+
+        p3 = subprocess.run(pr_cmd, cwd=repo, text=True, capture_output=True)
+        if p3.returncode != 0:
+            self.log_line(p3.stdout.strip())
+            self.log_line(p3.stderr.strip())
+            raise RuntimeError("לא הצלחתי ליצור PR אוטומטי. פתח PR ידנית מה-branch.")
+
+        pr_url = p3.stdout.strip()
+        self.log_line(f"PR: {pr_url}")
+
+        try:
+            subprocess.run(["open", pr_url], cwd=repo)
+        except Exception:
+            pass
+
+        messagebox.showinfo("PR נוצר ✅", f"פתחתי Pull Request:\n{pr_url}")
 
 
 if __name__ == "__main__":
