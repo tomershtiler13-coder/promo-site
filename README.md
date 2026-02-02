@@ -1,86 +1,84 @@
-# Promo Site (עמוד יחצן לאירועים) – GitHub Pages
+# Promo Site – עמוד יחצן לאירועים (GitHub Pages)
 
-עמוד סטטי (עמוד אחד) שמציג אירועים בתור כרטיסיות, ממיין לפי תאריך, ומפריד בין:
+עמוד סטטי (עמוד אחד) שמציג אירועים ככרטיסיות, ממיין לפי תאריך, ומפריד בין:
 - **אירועים קרובים**
 - **Past events** (ארכיון, מוסתר כברירת מחדל)
 
-כל אירוע הוא **תיקייה** תחת `events/` עם `meta.json` + `cover.jpg`.
-
-## איך זה עובד
-- האתר קורא `events/index.json` (רשימת תיקיות אירועים).
-- לכל תיקייה נטען `meta.json`, ומוצגת כרטיסיה.
-- GitHub Actions מריץ `python tools/promogen.py build` בכל push (וגם cron) כדי לייצר/לעדכן את `events/index.json`.
+כל אירוע הוא **תיקייה** תחת `events/` עם:
+- `meta.json`
+- `cover.jpg`
 
 ---
 
-## שלב 1: להרים GitHub Pages
-1. צור Repo חדש ב-GitHub (Public מומלץ ל-Pages חינמי).
-2. העלה את כל הקבצים בריפו הזה (או `git push`).
-3. GitHub: **Settings → Pages → Source = GitHub Actions**
-4. דחוף ל-`main`. תוך דקה-שתיים תקבל לינק `https://<user>.github.io/<repo>/`.
+## איך מוסיפים אירוע (הדרך הכי פשוטה – עם האפליקציה) ✅
+
+### 1) יוצרים תיקיית אירוע במחשב
+1. פתח את האפליקציה:
+   `tools/EventFolderMaker.app`
+2. מלא:
+   - שם אירוע
+   - תאריך (YYYY-MM-DD)
+   - שעה (HH:MM)
+   - מיקום (אופציונלי)
+   - לינק לכרטיסים
+   - קופון (אופציונלי)
+   - תיאור (אופציונלי)
+3. בחר תמונה (פלייר)
+
+✅ האפליקציה תיצור לך תיקייה חדשה בתוך:
+`events/YYYY-MM-DD-slug/`
+ובתוכה:
+- `meta.json`
+- `cover.jpg`
 
 ---
 
-## שלב 2: הוספת אירוע חדש (הכי קל)
-### אופציה א': ידני
-1. צור תיקייה:
-   `events/YYYY-MM-DD-some-slug/`
-2. הוסף:
-   - `meta.json`
-   - `cover.jpg`
-3. `git add . && git commit -m "Add event" && git push`
+### 2) מעלים את האירוע ל־GitHub דרך האתר (בלי Git)
+1. היכנס לריפו ב־GitHub
+2. היכנס לתיקייה `events/`
+3. לחץ **Add file → Upload files**
+4. גרור פנימה את התיקייה החדשה שנוצרה (או את שני הקבצים לתוך תיקייה בשם האירוע)
+5. למטה תחת **Commit changes**:
+   - בחר **Create a new branch for this commit and start a pull request**
+6. לחץ **Propose changes**
+7. לחץ **Create pull request**
 
-ה-Action יעדכן אינדקס ויפרסם אוטומטית.
-
-### אופציה ב': עם המחולל
-```bash
-python tools/promogen.py new --date 2026-03-15 --title "Sabres Night" --time 23:00 --location "תל אביב" --coupon "RON10" --ticket "https://..." --promoter "https://instagram.com/..."
-python tools/promogen.py build
-git add . && git commit -m "Add event" && git push
-```
+✅ זהו. אחרי Merge ה־GitHub Actions יעדכן אינדקס ויפרסם את האתר.
 
 ---
 
-## בדיקה מקומית
-```bash
-python tools/promogen.py serve --port 8000
-```
-פתח:
-`http://localhost:8000`
+## מחיקת אירוע
+1. היכנס לתיקייה של האירוע תחת `events/...`
+2. מחק את `meta.json` ואת `cover.jpg`
+3. צור branch ופתח PR כמו בהוספה
 
 ---
 
+## GitHub Pages (הקמה)
+1. Settings → Pages
+2. Source = **GitHub Actions**
+3. Push ל־`main`
 
-## פורמט meta.json
-דוגמה:
+תקבל לינק:
+`https://<user>.github.io/<repo>/`
+
+---
+
+## פורמט `meta.json` (אוטומטי מהאפליקציה)
 ```json
 {
-  "title": "No Name – פורים במדבר",
-  "date": "2026-03-02",
+  "title": "Event Name",
+  "date": "2026-03-07",
   "time": "22:00",
-  "location": "לב המדבר",
-  "description": "2 במות | ...",
-  "ticket_url": "https://example.com",
-  "promoter_url": "https://instagram.com/yourpage",
-  "coupon_code": "רוןקרובים",
+  "location": "Tel Aviv",
+  "description": "",
+  "ticket_url": "https://...",
+  "promoter_url": "",
+  "coupon_code": "",
   "image": "cover.jpg"
 }
-```
 
-### הערות
-- `date` בפורמט `YYYY-MM-DD` חובה.
-- `time` מומלץ (כדי להבדיל בין אירועים באותו יום).
-- `image` זה שם הקובץ בתיקייה (ברירת מחדל `cover.jpg`).
-
----
-
-## התאמות קלות
-- שינוי טקסט/שם מותג: `index.html` (כותרת למעלה).
-- להוסיף כפתור WhatsApp/טלפון: להוסיף שדה ל-meta.json ולקרוא אותו ב-`card()`.
-
-
-## Build Event Maker
 pyinstaller --windowed --name "EventFolderMaker" tools/event_maker_gui.py
 
-rm -rf tools/EventFolderMaker.app                                        
+rm -rf tools/EventFolderMaker.app
 cp -R dist/EventFolderMaker.app tools/EventFolderMaker.app
