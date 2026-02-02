@@ -1,0 +1,47 @@
+# -----------------------------
+# macOS
+# -----------------------------
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.Spotlight-V100
+.Trashes
+
+# -----------------------------
+# Python
+# -----------------------------
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+*.log
+
+# Virtual env
+.venv/
+venv/
+env/
+
+# -----------------------------
+# PyInstaller
+# -----------------------------
+build/
+dist/
+*.spec
+
+# -----------------------------
+# Editors / IDEs
+# -----------------------------
+.vscode/
+.idea/
+*.swp
+
+# -----------------------------
+# Optional: local dev artifacts
+# -----------------------------
+tools/.cache/
+tools/tmp/
