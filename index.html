@@ -203,8 +203,8 @@
     <div class="controls">
       <input id="q" placeholder="חיפוש… (שם/מקום)" />
       <select id="sort">
-        <option value="asc">מיון קרובים: קרוב→רחוק</option>
-        <option value="desc">מיון קרובים: רחוק→קרוב</option>
+        <option value="asc">מיון קרובים: מהקרוב לרחוק</option>
+        <option value="desc">מיון קרובים: מהרחוק לקרוב</option>
       </select>
       <select id="pastSort">
         <option value="newest">עבר: הכי חדש למעלה</option>
@@ -293,7 +293,7 @@
     const now = new Date();
     const diff = daysDiff(dt, now);
 
-    const pillText = isPast ? 'הסתיים' : (diff <= 7 ? 'קרוב' : 'בקרוב');
+    const pillText = isPast ? 'הסתיים' : (diff <= 7 ? 'בשבוע הקרוב' : 'בקרוב');
     const pillClass = isPast ? 'past' : 'soon';
 
     const imagePath = e.image ? `events/${folder}/${e.image}` : '';
