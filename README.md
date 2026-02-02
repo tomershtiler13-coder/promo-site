@@ -78,3 +78,9 @@ python tools/promogen.py serve --port 8000
 - שינוי טקסט/שם מותג: `index.html` (כותרת למעלה).
 - להוסיף כפתור WhatsApp/טלפון: להוסיף שדה ל-meta.json ולקרוא אותו ב-`card()`.
 
+
+## Build Event Maker
+pyinstaller --windowed --name "EventFolderMaker" tools/event_maker_gui.py
+
+rm -rf tools/EventFolderMaker.app                                        
+cp -R dist/EventFolderMaker.app tools/EventFolderMaker.app
